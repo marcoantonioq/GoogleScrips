@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <base target="_top">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue Js - Teste 1</title>
+
+    <!-- Vue JS -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.11"></script>
+
+    <!--Import Google Icon Font-->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+    <!-- Materialize CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+
+    <!-- Materialize CSS -->
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+
+</head>
+<style>
+    input+ul+label,
+    input+label {
+        font-size: larger !important;
+        color: #636363;
+    }
+    
+    input[required]+ul+label::before,
+    input[required]+label::before {
+        color: #ff5555 !important;
+        content: '* ' !important;
+    }
+</style>
+
+<body>
+    <!-- Conainer -->
+    <div class="container">
+
+        <div id="app">
+
+            <form id="form" name="DB">
+
+                <div class="input-field">
+                    <i class="material-icons prefix">account_balance</i>
+                    <input id="escola" v-model="DataSets.escola" type="text" class="validate" minlength="4" required autocomplete="off">
+                    <label for="escola">Escola</label>
+                </div>
+
+                <div class="in input-field">
+                    <i class="material-icons prefix">account_circle</i>
+                    <input :disabled="updating" id="titular" v-model="DataSets.titular" type="text" class="validate" minlength="6" required autocomplete="off">
+                    <label for="titular">Titular</label>
+                </div>
+
+                <div class="input-field">
+                    <i class="material-icons prefix">keyboard_tab</i>
+                    <input :disabled="updating" id="tipo" v-model="DataSets.tipo" type="text" class="validate" required autocomplete="off">
+                    <label for="tipo">Tipo <small>(Ex. mensalidades, água, aluguel, manutenção)</small></label>
+                </div>
+                <div class="input-field">
+                    <i class="material-icons prefix">description</i>
+                    <input id="disc" v-model="DataSets.disc" type="text" class="validate" required autocomplete="off">
+                    <label for="disc">Discriminação <small>(O que se refere à entrada. Ex: 1° mensalidade)</small>
+                  </label>
+                </div>
+
+                <div class="input-field">
+                    <i class="material-icons prefix">card_travel</i>
+                    <input id="local_movimento" v-model="DataSets.local_movimento" type="text" class="y" required autocomplete="off">
+                    <label for="local_movimento">Local de movimento</label>
+                </div>
+
+                <div class="input-field">
+                    <i class="material-icons prefix">attach_money</i>
+                    <input id="valor" type="text" @blur="checkValor" v-model="DataSets.valor" class="pagamento validate" pattern="^(-)?\d*(,)?\d{1,2}" required autocomplete="off">
+                    <label for="valor" data-error="Ex: 200,00">Valor {{this.DataSets.es}} (R$)<small></small>
+                  </label>
+                </div>
+
+                <div class="input-field">
+                    <i class="material-icons prefix">card_membership</i>
+                    <input id="forma_pagamento" v-model="DataSets.forma_pagamento" type="text" class="pagamento validate" required autocomplete="off">
+                    <label for="forma_pagamento">Forma de pagamento</label>
+                </div>
+
+                <div class="input-field">
+                    <i class="material-icons prefix">date_range</i>
+                    <input :disabled="updating" class="validate" id="vencimento" v-model="DataSets.vencimento" type="date" required autocomplete="off">
+                    <label for="vencimento">Vencimento <small>(Data)</small> </label>
+                </div>
+
+                <div class="input-field">
+                    <i class="material-icons prefix">date_range</i>
+                    <input :disabled="!updating" :required="updating" class="validate" id="pago" v-model="DataSets.pago_em" type="date" autocomplete="off">
+                    <label for="pago">Pago em <small>(Data)</small> </label>
+                </div>
+
+
+                <div class="input-field launch">
+                    <i class="material-icons prefix">add</i>
+                    <input :disabled="updating" id="parcelas" v-model="DataSets.parcelas" type="number" value="1" min=1 autocomplete="off">
+                    <label for="parcelas">Parcela(s): {{parcelado}} </label>
+                </div>
+
+                <div class="input-field launch">
+                    <i class="material-icons prefix">group</i>
+                    <input class="obs" id="obs" v-model="DataSets.obs" type="text" autocomplete="off">
+                    <label for="obs">Observações <small>(Agência / Conta / Nº Cheque)</small></label>
+                </div>
+
+                <div class="row">
+                    <div class="col s12 m6">
+                        {{textoPagamento()}}
+                    </div>
+                    <div class="col s12 m6">
+                        <button v-on:click.prevent.stop="salvar" class="col s12 btn green" type="submit" id="salvar">Salvar
+                        <i class="material-icons right">save</i>
+                        </button>
+                    </div>
+                </div>
+
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <script>
+        "use strict";
+
+        Date.prototype.addMeses = function(meses) {
+            this.setMonth(this.getMonth() + meses)
+            return this.getDataHora()
+        };
+
+        Date.prototype.setHora = function(time) {
+            this.setHours(time)
+            return this
+        };
+
+        Date.prototype.getData = function(lang = "pt-BR") {
+            let [dd, mm, yyyy] = this.toLocaleDateString().split('/')
+            return (lang === 'en') ?
+                `${yyyy}-${mm}-${dd}` :
+                `${dd}/${mm}/${yyyy}`
+        };
+
+        Date.prototype.getDataHora = function(lang = "pt-BR") {
+            return `${this.getData(lang)} ${this.toLocaleTimeString()}`
+        };
+
+        Date.prototype.isSame = function(date) {
+            return new Intl.DateTimeFormat("pt-BR").format(this) ===
+                new Intl.DateTimeFormat("pt-BR").format(new Date(date))
+        };
+
+
+        try {
+
+            // Vue.JS
+            var app = new Vue({
+                el: '#app',
+                data() {
+                    return {
+                        DataSets: {
+                            row: '<?=data.values.row?>',
+                            datetime: '<?=data.values.datetime?>',
+                            ativo: 'true',
+                            status: '=IF(AND(ISDATE( INDEX(A:Z; ROW(); 16) )); "Paga"; IF(INDEX(A:Z; ROW(); 13) < TODAY() ;"Vencido";"À vencer"))',
+                            es: "<?=data.values.es?>",
+                            escola: "<?=data.values.escola?>",
+                            titular: "<?=data.values.titular?>",
+                            tipo: "<?=data.values.tipo?>",
+                            disc: "<?=data.values.disc?>",
+                            local_movimento: "<?=data.values.local_movimento?>",
+                            valor: '<?=data.values.valor?>',
+                            forma_pagamento: '<?=data.values.forma_pagamento?>',
+                            vencimento: '<?=data.values.vencimento?>',
+                            parcelas: '<?=data.values.parcelas?>',
+                            obs: "<?=data.values.obs?>",
+                            pago_em: '',
+                            updated: '',
+                        },
+                        updating: false,
+                        message: [],
+                    }
+                },
+                methods: {
+                    toast: function(message) {
+                        M.toast({
+                            html: message
+                        });
+                        console.log(message)
+                    },
+                    checkValor: function(event) {
+                        try {
+                            let value = Number(String(this.DataSets.valor).replace(',', '.'))
+                            let setValorNegativo = (val) => {
+                                this.DataSets.valor = (val *= -1)
+                                    .toFixed(2)
+                                    .replace('.', ',')
+                            }
+                            this.DataSets.es === "Saída" &&
+                                value > 0 &&
+                                setValorNegativo(value)
+
+                            this.DataSets.es === "Entrada" &&
+                                value < 0 &&
+                                setValorNegativo(value)
+                        } catch (e) {
+                            console.log("Erro na conversão de valor!!!")
+                        }
+                        return true
+                    },
+                    textoPagamento: function() {
+                        try {
+                            let dataVencimento = new Date(this.DataSets.vencimento + ' 20:59:59').getData()
+                            let dataAtual = new Date().getData()
+
+                            if (this.updating)
+                                return `${this.DataSets.es}: efetuada em ${new Date(this.DataSets.pago_em+' 20:59:59').toLocaleDateString()} no valor de R$${this.DataSets.valor}.`
+
+                            return (dataVencimento === dataAtual) ?
+                                `${this.DataSets.es}: efetuar o pagamento no valor de R$${this.DataSets.valor}.` :
+                                ` ${this.DataSets.es}: agendar o valor de R$${this.DataSets.valor} para ${dataVencimento}.`
+                        } catch (e) {
+                            return 'Informe data de vencimento! ' + e
+                        }
+                    },
+                    consolidarDados: function() {
+                        const currentDate = new Date()
+                        const currentTime = currentDate.toTimeString()
+
+                        this.DataSets.updated = new Date().getDataHora('en')
+                        let values = Object.values(this.DataSets)
+                        var Parcelas = []
+
+                        const setData = (data, time = currentTime) => {
+                            let dt = new Date(`${data} ${time}`)
+                            return (isNaN(dt.getTime())) ?
+                                data : dt.getDataHora('en')
+                        }
+
+                        values[12] = setData(values[12], '20:59:59')
+                        values[15] = setData(values[15])
+
+                        let nparcelas = parseInt(values[13]);
+
+                        console.log(nparcelas)
+
+                        if (this.updating) {
+
+                            Parcelas.push(values)
+
+                        } else if (!this.updating && Number.isInteger(nparcelas) && nparcelas < 12) {
+
+                            const createParcela = p => {
+
+                                var parcela = values.slice();
+                                let dtvencimento = new Date(parcela[12])
+
+                                // Limpa data de pagamento
+                                parcela[15] = ''
+
+                                // Adiciona observações
+                                parcela[14] = `${parcela[14]} | Parcela: ${p+1}\/${nparcelas}`;
+
+                                // atualiza data de vencimento
+                                dtvencimento.addMeses(p);
+                                parcela[12] = `${dtvencimento.getData('en')} 20:59:59`;
+
+                                Parcelas.push(parcela)
+                            }
+                            for (let i = 0; i < nparcelas; i++) {
+                                createParcela(i)
+                            }
+                        }
+                        // Adiciona data de pagamento da primeira parcela
+                        Parcelas[0][15] = values[15]
+
+                        return Parcelas
+                    },
+                    salvar: function(event) {
+                        let elements_forms = document.querySelectorAll("button,input")
+                        try {
+
+                            if (form.checkValidity() && this.checkValor()) {
+                                console.table(this.consolidarDados())
+
+                                elements_forms.forEach(el => {
+                                    el.classList.add("disabled");
+                                    el.setAttribute('disabled', 'disabled')
+                                })
+                                let removeDisabled = () => {
+                                    elements_forms.forEach(el => {
+                                        el.classList.remove("disabled");
+                                        el.removeAttribute('disabled', 'disabled')
+                                    })
+                                }
+                                try {
+                                    google.script.run.withSuccessHandler((i) => {
+                                        this.toast("Pagamento a prazo salvo com sucesso!")
+                                        google.script.host.close();
+                                    }).withFailureHandler((i) => {
+                                        removeDisabled()
+                                        this.toast("Falha salvar: " + i)
+                                    }).saveAll(this.consolidarDados())
+                                } catch (error) {
+                                    removeDisabled()
+                                    this.toast("Erro: calculo de parcelas")
+                                }
+                            } else {
+                                this.toast('Verifique todos os campos!');
+                            }
+                        } catch (error) {
+                            console.log("Salvar: ", error)
+                        }
+                    },
+                },
+                computed: {
+                    parcelado() {
+                        let valor = Number(String(this.DataSets.valor).replace(',', '.'))
+                        let parcelas = Number(this.DataSets.parcelas)
+                        return parcelas > 1 ?
+                            `${parcelas} x ${this.DataSets.valor} = R$ ${String((parcelas * valor).toFixed(2)).replace('.',',')}` : ''
+                    },
+                },
+                watch: {
+                    'DataSets.valor': function(newValue, oldValue) {
+                        console.log(Object.values(this.DataSets))
+                    },
+                    'DataSets.vencimento': function(newValue, oldValue) {
+                        try {
+                            if (!this.updating) {
+
+                                let dataVencimento = new Date(this.DataSets.vencimento + ' 20:59:59').getData('en')
+                                let dataAtual = new Date().getData('en')
+                                console.log(dataVencimento, dataAtual)
+
+                                this.DataSets.pago_em = (dataVencimento === dataAtual) ?
+                                    dataAtual : ""
+                            }
+                        } catch (e) {
+                            console.log('Informe data de vencimento!', e)
+                        }
+                    },
+                    'DataSets.parcelas': function(newValue, oldValue) {
+                        console.log(this.DataSets)
+                    },
+                    'DataSets': function(newValue) {
+                        console.log(Object.values(this.DataSets))
+                    },
+                },
+                mounted: function() {
+                    this.$nextTick(function() {
+                        let DataSets = this.DataSets
+
+                        if (parseInt(this.DataSets.row) > 0) {
+                            this.updating = true
+                            this.DataSets.pago_em = new Date().getData('en')
+                        } else {
+                            this.DataSets.datetime = new Date().getDataHora('en')
+                        }
+
+                        try {
+                            // ConstFunctions
+                            const setAttr = (query, attr, value) => document
+                                .querySelectorAll(query)
+                                .forEach(el => el.setAttribute(attr, value))
+
+
+                            setAttr('#vencimento', 'min', new Date().getData('en'))
+                            setAttr('#pago', 'min', new Date().getData('en'))
+                            setAttr('#pago', 'max', new Date().getData('en'))
+
+                            // Select
+                            var options;
+                            var selects = document.querySelectorAll('select');
+                            var instancesSelects = M.FormSelect.init(selects, options);
+
+                            // Tooltippeds
+                            var tooltippeds = document.querySelectorAll('.tooltipped');
+                            var instancesToolTippeds = M.Tooltip.init(tooltippeds, options);
+
+                            // AutoComplete
+                            try {
+                                google.script.run.withSuccessHandler((DataSets) => {
+                                    console.log("DataSets: ", DataSets)
+                                    for (let name in DataSets) {
+                                        try {
+                                            let element = document.getElementById(name);
+                                            DataSets[name].onAutocomplete = el => {
+                                                this.DataSets[element.id] = el
+                                            }
+                                            M.Autocomplete.init(element, DataSets[name])
+                                        } catch (e) {
+                                            console.log(e)
+                                        }
+                                    }
+                                }).withFailureHandler((i) => {
+                                    this.toast("Falha DataSets: " + i);
+                                }).getValuesDS()
+                            } catch (e) {
+
+                            }
+
+                        } catch (e) {
+                            console.log("Erro DOMContentLoaded", e)
+                        }
+                    })
+                }
+            })
+
+
+        } catch (error) {
+            console.log("Vue.js erro: " + error)
+        }
+    </script>
+
+</body>
+
+</html>
