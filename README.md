@@ -43,6 +43,21 @@ function onEdit(event){
 ```
 [More...](./Eventos/)
 
+## doPost
+```JS
+function doPost(e) {
+  let body = JSON.parse(
+    decodeURI(e.postData.getDataAsString())
+  )
+
+  save(e.postData)
+
+  return createTextOutput({body:values, status: status})
+    .setMimeType(ContentService.MimeType.JSON);
+}
+```
+[More...](./API/)
+
 ## CRUD
 
 Crud GoogleSheet

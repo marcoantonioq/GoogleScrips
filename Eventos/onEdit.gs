@@ -81,9 +81,7 @@ const onEvents = {
 }
 
 function onEdit(event){  
-  
-  //SpreadsheetApp.getUi().alert("Planilha atual: " + event.namedValues )
-  
+
   var ss = SpreadsheetApp.getActive();
     
   try 
